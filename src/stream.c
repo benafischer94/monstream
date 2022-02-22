@@ -187,6 +187,30 @@ static void stream_add_src_http(struct stream *st) {
 	stream_add(st, src);
 }
 
+// Add support for mp4 to HTTPS (Youtube testers)
+static const char *stream_location_http(const struct stream *st) {
+	if ((strcmp("PNG", st->encoding) == 0) ||
+	    (strcmp("MJPEG", st->encoding) == 0) ||
+			(strcmp("MPEG4", st->encoding) == 0))
+	{
+		return st->location;
+	} else {
+		elog_err("Unsupported encoding for HTTPS: %s\n", st->encoding);
+		/* Use IP address in TEST-NET-1 range to ensure the stream
+		 * will timeout quickly */
+		return "https://192.0.2.1/";
+	}
+}
+
+// Mimics HTTP struct, could move to a regex?
+static void stream_add_src_https(struct stream *st) {
+	GstElement *src = gst_element_factory_make("souphttpsrc", NULL);
+	g_object_set(G_OBJECT(src), "location", stream_location_https(st), NULL);
+	g_object_set(G_OBJECT(src), "timeout", 2, NULL);
+	g_object_set(G_OBJECT(src), "retries", 0, NULL);
+	stream_add(st, src);
+}
+
 static gboolean select_stream_cb(GstElement *src, guint num, GstCaps *caps,
 	gpointer user_data)
 {
@@ -291,6 +315,11 @@ static bool stream_is_http(const struct stream *st) {
 	return strncmp("http://", st->location, 7) == 0;
 }
 
+/** Add support for https */
+static bool stream_is_https(const struct stream *st) {
+	return strncmp("https://", st->location, 7) == 0;
+}
+
 static bool stream_is_rtsp(const struct stream *st) {
 	return strncmp("rtsp://", st->location, 7) == 0;
 }
@@ -359,6 +388,8 @@ static void stream_start_pipeline(struct stream *st) {
 	stream_add_later_elements(st);
 	if (stream_is_udp(st))
 		stream_add_udp_pipe(st);
+	else if (stream_is_https(st))
+	  stream_add_src_https(st);
 	else if (stream_is_http(st))
 		stream_add_src_http(st);
 	else if (stream_is_rtsp(st))
