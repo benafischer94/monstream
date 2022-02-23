@@ -73,10 +73,25 @@ static void stream_add(struct stream *st, GstElement *elem) {
 		elog_err("Element not added to pipeline\n");
 }
 
+// static GstElement *stream_create_sink(const struct stream *st) {
+// 	return (strcmp("VAAPI", st->sink_name) == 0)
+// 	      ? gst_element_factory_make("vaapisink", NULL)
+// 	      : gst_element_factory_make("xvimagesink", NULL);
+// }
+
 static GstElement *stream_create_sink(const struct stream *st) {
-	return (strcmp("VAAPI", st->sink_name) == 0)
-	      ? gst_element_factory_make("vaapisink", NULL)
-	      : gst_element_factory_make("xvimagesink", NULL);
+	if (strcmp("VAAPI", st->sink_name) == 0) {
+		return (gst_element_factory_make("vaapisink", NULL));
+	}
+	else if (strcmp("XVIMAGE", st->sink_name) == 0 ) {
+		return (gst_element_factory_make("xvimagesink", NULL));
+	}
+	else if (strcmp("V4L2", st->sink_name) == 0) {
+		return (gst_element_factory_make("v4l2sink", NULL));
+	}
+	else {
+		return (gst_element_factory_make("xvimagesink", NULL));
+	}
 }
 
 static GstElement *stream_create_real_sink(struct stream *st) {
@@ -188,19 +203,10 @@ static void stream_add_src_http(struct stream *st) {
 }
 
 // Add support for mp4 to HTTPS (Youtube testers)
-static const char *stream_location_http(const struct stream *st) {
-	if ((strcmp("PNG", st->encoding) == 0) ||
-	    (strcmp("MJPEG", st->encoding) == 0) ||
-			(strcmp("MPEG4", st->encoding) == 0))
-	{
+static const char *stream_location_https(const struct stream *st) {
 		return st->location;
-	} else {
-		elog_err("Unsupported encoding for HTTPS: %s\n", st->encoding);
-		/* Use IP address in TEST-NET-1 range to ensure the stream
-		 * will timeout quickly */
-		return "https://192.0.2.1/";
-	}
 }
+
 
 // Mimics HTTP struct, could move to a regex?
 static void stream_add_src_https(struct stream *st) {
