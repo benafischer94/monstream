@@ -317,6 +317,21 @@ static void stream_add_h264(struct stream *st) {
 	stream_add(st, gst_element_factory_make("rtph264depay", NULL));
 }
 
+static GstElement *stream_create_h265dec(const struct stream *st) {
+	if (strcmp("VAAPI", st->sink_name) == 0 {
+		return gst_element_factory_make("vaapih265dec", NULL);
+	} else {
+		GstElement *dec = gst_element_factory_make("avdec_h265", NULL);
+		g_object_set(G_OBJECT(dec), "output-corrupt", FALSE, NULL);
+		return dec;
+	}
+}
+
+static void stream_add_h265(struct stream *st) {
+	stream_add(st, stream_create_h265dec(st));
+	stream_add(st, gst_element_factory_make("rtph265depay", NULL));
+}
+
 static void stream_add_png(struct stream *st) {
 	stream_add(st, gst_element_factory_make("imagefreeze", NULL));
 	stream_add(st, gst_element_factory_make("videoconvert", NULL));
@@ -334,6 +349,8 @@ static void stream_add_later_elements(struct stream *st) {
 		stream_add(st, gst_element_factory_make("videobox", "vbox"));
 	if (strcmp("H264", st->encoding) == 0) {
 		stream_add_h264(st);
+	} else if (strcmp("H265", st->encoding) == 0) {
+		stream_add_h265(st);
 	} else if (strcmp("MPEG4", st->encoding) == 0) {
 		stream_add_mpeg4(st);
 	} else if (strcmp("PNG", st->encoding) == 0) {
