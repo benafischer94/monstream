@@ -318,7 +318,7 @@ static void stream_add_h264(struct stream *st) {
 }
 
 static GstElement *stream_create_h265dec(const struct stream *st) {
-	if (strcmp("VAAPI", st->sink_name) == 0 {
+	if (strcmp("VAAPI", st->sink_name) == 0) {
 		return gst_element_factory_make("vaapih265dec", NULL);
 	} else {
 		GstElement *dec = gst_element_factory_make("avdec_h265", NULL);
